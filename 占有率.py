@@ -1,3 +1,6 @@
+#Excelに設計したレンズの基本的な振る舞いを出力します
+
+
 from re import A
 import numpy as np
 import matplotlib.pyplot as plt

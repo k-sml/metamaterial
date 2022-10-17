@@ -1,3 +1,6 @@
+#占有率と位相の関係を表す図を出力します
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 
