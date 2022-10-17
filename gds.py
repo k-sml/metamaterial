@@ -1,8 +1,12 @@
+#パラメータを入力すると、それに基づいてgds2ファイルが生成されます
+
+
 import numpy as np
 import math
 import gdspy
 
 
+#(n, m)は媒質の屈折率、x, yはx方向、y方向の占有率
 def cal_tokakusseturitu(n, m, x, y):
     TE = x * n**2 + (1 - x) * m**2
     TM = y * n**(-2) + (1 - y) * m**(-2)
@@ -11,42 +15,41 @@ def cal_tokakusseturitu(n, m, x, y):
     return ref
 
 
+
+#位置r, 焦点距離f, 波長λの位相差を計算
 def cal_isousa(r, f, λ):
     φ = -360*(np.sqrt(r**2 + f**2) - f)/λ
     return φ
 
 
+
+#位置r, 焦点距離f, 波長λ, 高さH, シリコンの屈折率silicon_refからその場所のあるべき占有率などの情報を計算
 def cal_isousa_occupancy(r, f, λ, H, silicon_ref):
 
     original_φ = -cal_isousa(r, f, λ)
-    φ = -cal_isousa(r, f, λ)
-    # print('中心との位相差は' + str(φ) + '°')
+    φ = -cal_isousa(r, f, λ)   #中心との位相差
     while φ > 360:
-        φ -= 360
-    # print('360°調整した位相差は' + str(φ))
-    Δn = (φ * λ / H) / 360
-    # print('中心との屈折率差は' + str(Δn))
+        φ -= 360   #360°調整した中心との位相差
+    Δn = (φ * λ / H) / 360   #中心との屈折率差
     Δn_360 = λ / H
     air_ref = 1.0
     # standard = (1.0 + silicon_ref) / 2   #基準
     standard = 1.8
-    # standard = 1.5   #7.5用
     center_refrective = standard + Δn_360 / 2  #中心の等価屈折率
     r_refrective = center_refrective - Δn  #位置rでの等価屈折率
-    # print('中心の等価屈折率は' + str(center_refrective))
-    # print('位置rの等価屈折率は' + str(r_refrective))
     x = np.arange(0.0, 1.0, 0.001)
     occupancy = 0
     for i in range(len(x)):
         if cal_tokakusseturitu(silicon_ref, air_ref, x[i], x[i]) > r_refrective:
-            occupancy = x[i]
+            occupancy = x[i]   #位置rでの占有率
             break
-    # print('位置rの占有率は' + str(occupancy))
 
     return original_φ, φ, Δn, center_refrective, r_refrective, occupancy 
 
 
 
+#占有率からwidthを算出、gds2ファイルで設計する
+#焦点距離f, 波長λ, 高さH, シリコンの屈折率silicon_ref, 中心からの最大長さmax_r, 設計するウエハの一辺の長さsize, ウエハの中で加工する部分とsizeとの差
 def create_r_width(f, λ, H, silicon_ref, max_r, size, adjustment):
     lib = gdspy.GdsLibrary()
     cell = lib.new_cell('FIRST')
@@ -68,11 +71,9 @@ def create_r_width(f, λ, H, silicon_ref, max_r, size, adjustment):
             x = i * 200
             y = j * 200
             z = math.floor(math.sqrt(x**2 + y**2)/200)
-            # a = adjustment / 2 + end * 200
-            # cell.add(gdspy.Rectangle((x - r_width[z]/2 +a, y + r_width[z]/2 +a), (x + r_width[z]/2 +a, y - r_width[z]/2 +a)))
             cell.add(gdspy.Rectangle((x + r_width[z]/2, y + r_width[z]/2), (x - r_width[z]/2, y - r_width[z]/2)))
-    lib.write_gds('exp.gds')
-    cell.write_svg('exp.svg')
+    lib.write_gds('make_gds.gds')
+    cell.write_svg('make_gds.svg')
     gdspy.LayoutViewer(lib)
 
 create_r_width(100*10**(-3), 750*10**(-6), 500*10**(-6), 3.4, 21.15*10**(-3), 35000, 5000)
