@@ -57,7 +57,6 @@ def create_r_width(f, λ, H, silicon_ref, max_r, size, adjustment):
     r_occupancy = [0 for i in range(len(y))]
     for i in range(3, len(y)+3):
         original_φ, φ, Δn, center_refrective, r_refrective, occupancy = cal_isousa_occupancy(y[i-3], f, λ, H, silicon_ref)
-        # occupancy = math.floor(occupancy*100) / 100
         r_occupancy[i-3] = math.floor((1 - occupancy) * 10000) / 10000
     r_width = [0 for i in range(len(y)+3)]
     for i in range(len(y)):
